@@ -1,4 +1,4 @@
-import { Scene, sRGBEncoding, WebGLRenderer } from 'three'
+import { Scene, sRGBEncoding, WebGLRenderer, Vector2 } from 'three'
 import { Pane } from 'tweakpane'
 
 import Sizes from '@tools/Sizes'
@@ -7,6 +7,11 @@ import Assets from '@tools/Loader'
 
 import Camera from './Camera'
 import World from '@world/index'
+
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass'
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass'
+import { AfterimagePass } from 'three/examples/jsm/postprocessing/AfterimagePass'  
 
 export default class App {
   constructor(options) {
@@ -18,10 +23,28 @@ export default class App {
     this.sizes = new Sizes()
     this.assets = new Assets()
 
+    this.config = {
+      cameraSpeed: 0,
+      cameraRadius: 8,
+      particlesSpeed: 0,
+      particlesCount: 3000,
+      bloomStrength: 0.3,
+      bloomThreshold: 0.70,
+      bloomRadius: 0.5,
+      fogColor: 0xa2dcfc,
+      fogNear: 0,
+      fogFar: 1,
+      camZ: 3,
+      afterImageValue: 0.60
+  }
+
+    this.blum = false
+
     this.setConfig()
     this.setRenderer()
     this.setCamera()
     this.setWorld()
+    this._createPostprocess()
   }
   setRenderer() {
     // Set scene
@@ -53,7 +76,11 @@ export default class App {
       // if the window is only in the background without focus (for example, if you select another window without minimizing the browser one), 
       // which might cause some performance or batteries issues when testing on multiple browsers
       if (!(this.renderOnBlur?.activated && !document.hasFocus() ) ) {
+        if(!this.world.blum) {
         this.renderer.render(this.scene, this.camera.camera)
+        } else {
+          this.composer.render(this.time.delta * 0.0001)
+        }
       }
     })
 
@@ -94,5 +121,24 @@ export default class App {
     if (window.location.hash === '#debug') {
       this.debug = new Pane()
     }
+  }
+
+  _createPostprocess() {
+    this.renderPass = new RenderPass(this.scene, this.camera.camera)
+
+    const resolution = new Vector2(this.canvas.clientWidth, this.canvas.clientHeight)
+
+    this.bloomPass = new UnrealBloomPass(resolution, 0, 0, 0)
+    this.bloomPass.threshold = this.config.bloomThreshold
+    this.bloomPass.strength = this.config.bloomStrength
+    this.bloomPass.radius = this.config.bloomRadius
+
+    this.afterimagePass = new AfterimagePass()
+    this.afterimagePass.uniforms.damp.value = this.config.afterImageValue
+
+    this.composer = new EffectComposer(this.renderer)
+    this.composer.addPass(this.renderPass)
+    this.composer.addPass(this.afterimagePass)
+    this.composer.addPass(this.bloomPass)
   }
 }
