@@ -38,7 +38,7 @@
   background-color #000
   display flex
   flex-direction column
-  justify-content center
+  justify-content space-around
   align-items center
   transition 0.55s opacity ease-out
   z-index 100
@@ -46,7 +46,6 @@
 
 
 .start--button {
-    font-family 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif
     font-size: 1em;
     margin-top: -10px;
     padding-right: 35px;
@@ -54,6 +53,9 @@
     text-decoration: none;  
     display: inline-block;
     cursor: pointer;
+    z-index: 100;
+    font-family: 'Verdana'
+
 }
 .start--button:after {
     transition: all ease-in-out .2s;
@@ -66,3 +68,55 @@
 .start--button:hover:after {
     width: 100%;
 }
+
+#start--image {
+  height 50%
+  display flex
+  flex-direction column
+  justify-content center
+  align-items center
+  transition 0.55s opacity ease-out
+  z-index 100
+  }
+
+.shiet {
+  height 100vh
+  width 100vw
+  display flex
+  flex-direction column
+  justify-content space-around
+  align-items center
+  background: transparent
+  opacity: 1;
+  position: absolute;
+  top: 0;
+  background-color: black
+  z-index -1
+  }
+
+  h1 {
+    font-family: 'Verdana'
+    opacity: 0
+    color white
+    font-size: 96px;
+  }
+
+  .thomas, .tuto {
+    opacity: 0
+    position absolute
+    height: 100%
+    width: 100%
+    background: black
+
+    img {
+      position absolute
+      left: 50%
+      top 50%
+      transform: translate(-50%, -50%)
+      width : 50vw;
+    }
+    }
+
+.tuto {
+  background: white;
+  }

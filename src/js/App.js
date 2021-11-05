@@ -35,7 +35,6 @@ export default class App {
       fogNear: 0,
       fogFar: 1,
       camZ: 3,
-      afterImageValue: 0.60
   }
 
     this.blum = false
@@ -134,7 +133,7 @@ export default class App {
     this.bloomPass.radius = this.config.bloomRadius
 
     this.afterimagePass = new AfterimagePass()
-    this.afterimagePass.uniforms.damp.value = this.config.afterImageValue
+    this.afterimagePass.uniforms.damp.value = this.world.afterImageValue
 
     this.composer = new EffectComposer(this.renderer)
     this.composer.addPass(this.renderPass)

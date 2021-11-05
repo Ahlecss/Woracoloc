@@ -1,5 +1,5 @@
 import { AxesHelper, Object3D, BoxGeometry, MeshBasicMaterial, Mesh, Color, ShaderMaterial, PlaneGeometry } from 'three'
-import gsap, { Power3 } from 'gsap'
+import gsap, { Power3, Linear } from 'gsap'
 
 import AmbientLightSource from './AmbientLight'
 import PointLightSource from './PointLight'
@@ -24,10 +24,12 @@ export default class World {
     this.currentTunnelLength = 0
     this.spaceBetween = 2
     this.cameraZ = 8
+    this.rotateContainerZ = 0
 
     this.allCubes = []
 
     this.blum = false
+    this.afterImageValue = 0.60
 
     if (this.debug) {
       this.container.add(new AxesHelper(5))
@@ -43,8 +45,8 @@ export default class World {
     this.setAmbientLight()
     this.setPointLight()
     this.initSound()
-    this.initInteractions()
     this.initShader()
+    this.initMouseMove()
   }
   setLoader() {
     this.loadDiv = document.querySelector('.loadScreen')
@@ -123,8 +125,11 @@ export default class World {
       .then(({ bpm, offset, tempo }) => {
         console.log(bpm, offset, tempo)
         this.bpm = 126// bpm
-        this.addCube()
-        this.update()
+
+        setTimeout(() => {
+          this.addCube()
+          this.update()
+        }, 6000)
 
 
         // the tempo could be analyzed
@@ -136,6 +141,15 @@ export default class World {
       });
   }
 
+  initMouseMove() {
+    // Mouse clicks
+    const canvasX = window.innerWidth / 2
+    const canvasY = window.innerHeight / 2
+    this.start.addEventListener('mousemove', (e) => {
+      this.targetPositionX = (canvasX - e.clientX) / canvasX
+      this.targetPositionY = e.clientY / canvasY
+    })
+  }
   startMoving() {
     const geometry = new BoxGeometry(1, 1, -1);
     for (let i = 0; i < 360; i++) {
@@ -274,8 +288,8 @@ export default class World {
         x: 1.2,
         y: 1.2,
         z: 1.2,
-        duration: 0.2,
-        ease: Power3.easeIn
+        duration: 0.1,
+        ease: Power3.easeOut
       })
 
       gsap.to(cube.scale, {
@@ -283,19 +297,29 @@ export default class World {
         y: 1,
         z: 1,
         duration: 0.1,
-        delay: 0.2,
+        delay: 0.1,
         ease: Power3.easeOut
       })
     })
   }
 
-  rotate() {
+  rotateCubes() {
    this.allCubes.forEach((cube) => {
       gsap.to(cube.rotation, {
         z: this.currentTunnelLength % 4 * (Math.PI /2),
         duration: 0.2,
-        ease: Power3.easeIn
+        ease: Power3.easeOut
       })
+    })
+  }
+
+  rotateContainer() {
+    this.rotateContainerZ += this.currentTunnelLength % 4 * (Math.PI /8)
+    console.log(this.rotateContainerZ)
+    gsap.to(this.container.rotation, {
+      z: this.rotateContainerZ,
+      duration: 0.1,
+      ease: Power3.easeOut
     })
   }
   initInteractions() {
@@ -316,13 +340,43 @@ export default class World {
         this.mouseRightDown = false
       }
     })
+    document.addEventListener('keydown', (e) => {
+      console.log(e)
+      if (e.code === 'KeyQ' && !this.hasMoreCubes) {
+        this.hasMoreCubes = true
+      } else if (e.code === 'KeyQ' && this.hasMoreCubes) {
+        this.hasBounce = false
+      }
 
-    // Mouse clicks
-    const canvasX = window.innerWidth / 2
-    const canvasY = window.innerHeight / 2
-    this.start.addEventListener('mousemove', (e) => {
-      this.targetPositionX = (canvasX - e.clientX) / canvasX
-      this.targetPositionY = e.clientY / canvasY
+      if (e.code === 'KeyW' && !this.hasBounce) {
+        this.hasBounce = true
+      } else if (e.code === 'KeyW' && this.hasBounce) {
+        this.hasBounce = false
+      }
+
+      if (e.code === 'KeyE' && !this.hasRotateCubes) {
+        this.hasRotateCubes = true
+      } else if (e.code === 'KeyE' && this.hasRotateCubes) {
+        this.hasRotateCubes = false
+      }
+
+      if (e.code === 'KeyR' && !this.hasRotateContainer) {
+        this.hasRotateContainer = true
+      } else if (e.code === 'KeyR' && this.hasRotateContainer) {
+        this.hasRotateContainer = false
+      }
+
+      if (e.code === 'KeyT' && !this.hasChangeMaterial) {
+        this.hasChangeMaterial = true
+      } else if (e.code === 'KeyT' && this.hasChangeMaterial) {
+        this.hasChangeMaterial = false
+      }
+
+      if (e.code === 'KeyY' && !this.hasPlane) {
+        this.hasPlane = true
+      } else if (e.code === 'KeyY' && this.hasPlane) {
+        this.hasPlane = false
+      }
     })
   }
 
@@ -387,19 +441,91 @@ export default class World {
 
   createInterval = () => {
     clearTimeout(this.timeout)
-    this.addCube()
+    if(this.currentTunnelLength !== (32) ) {
+      this.addCube()
+    } else {
+      this.currentTunnelLength += this.spaceBetween
+    }
     // Timeline
     console.log(this.currentTunnelLength)
-    if(this)
-    if(this.currentTunnelLength > 50) {
-      this.addMoreCube()
-    }  
-    if(this.currentTunnelLength > 70) {
-      this.bounce()
+
+    if(this.currentTunnelLength < 520) {
+      if(this.currentTunnelLength > 34) {
+        this.addMoreCube()
+      }  
+      if(this.currentTunnelLength > 66) {
+        this.bounce()
+      }
+      if(this.currentTunnelLength > 98) {
+        this.rotateCubes()
+      }
+      if(this.currentTunnelLength > 130) {
+        this.rotateContainer()
+      }
+      if(this.currentTunnelLength > 160 && this.currentTunnelLength < 252) {
+        this.changeMaterial()
+      }
+
+      if(this.currentTunnelLength === 250) {
+        this.hideCanvas()
+      }
+
+      if(this.currentTunnelLength === 290) {
+        this.shiet()
+      }
+
+      if(this.currentTunnelLength  === 376) {
+        this.thomas()
+      }
+
+      if(this.currentTunnelLength === 388) {
+        this.showCanvas()
+        this.createPlane()
+        this.blum = true
+      }
+      if(this.currentTunnelLength === 412) {
+        this.afterImageValue = 0.90
+      }
+  }
+    if(this.currentTunnelLength === 520) {
+      this.removePlane()
+      this.showTuto()
+      this.initInteractions()
     }
-    if(this.currentTunnelLength > 90) {
-      this.rotate()
+
+    if(this.currentTunnelLength > 520) {
+      if(this.hasMoreCubes) {
+        this.addMoreCube()
+      }
+      if(this.hasBounce) {
+        this.bounce()
+      }
+      if(this.hasRotateCubes) {
+        this.rotateCubes()
+      }
+      if(this.hasRotateContainer) {
+        this.rotateContainer()
+      }
+      if(this.hasChangeMaterial) {
+        this.changeMaterial()
+      }
+      if(this.hasPlane) {
+        this.createPlane()
+        this.blum = true
+      } else {
+        this.removePlane()
+        this.blum = false
+      }
     }
+
+
+    // 250
+
+    // 320
+
+    // 328
+
+    /*
     if(this.currentTunnelLength > 110) {
       this.changeMaterial()
     }
@@ -409,6 +535,7 @@ export default class World {
     if(this.currentTunnelLength > 130) {
       this.blum = true
     }
+    */
     this.timeout = setTimeout(this.createInterval, (60 / this.bpm) * 1000 * (1 / this.speedFactor));
 
   }
@@ -456,6 +583,66 @@ export default class World {
     this.container.add( this.plane );
   }
 
+  removePlane() {
+    this.container.remove( this.plane );
+  }
+
+
+  shiet () {
+    gsap.to("h1", {
+      opacity: 1,
+      stagger: { // wrap advanced options in an object
+        each: 0.45,
+        from: "top",
+      }
+    }).then(() => {
+      gsap.to("h1", {
+        opacity: 0,
+        stagger: { // wrap advanced options in an object
+          each: 0.45,
+          from: "top",
+          delay: 10
+        }
+      })
+    });
+  }
+
+  thomas() {
+    gsap.to('#thomas', {
+      opacity: 1,
+    }).then(() => {
+      gsap.to('#thomas', {
+        opacity: 0,
+        delay: 3
+      })
+    })
+  }
+
+  hideCanvas() {
+    gsap.to('canvas', {
+      opacity: 0,
+    })
+  }
+  showCanvas() {
+    gsap.to('canvas', {
+      opacity: 1,
+    })
+  }
+
+  showTuto() {
+    gsap.to('.tuto', {
+      opacity: 0.6,
+    }).then(() => {
+      gsap.to('.tuto', {
+        opacity: 0,
+        delay: 8
+      })
+    })
+  }
+
+  lerp (start, end, amt){
+    return (1-amt)*start+amt*end
+  }
   easeOutQuad(t) {
     return 1 - (--t) * t * t * t
   }
